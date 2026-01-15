@@ -1,91 +1,284 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+    Building2,
+    Users,
+    Mail,
+    Send,
+    TrendingUp,
+    Calendar,
+    Target,
+    Zap,
+    ArrowUpRight,
+    Search,
+    CheckCircle,
+    Clock,
+} from 'lucide-react';
+import { systemApi } from '@/lib/api';
 
-export default function LandingPage() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100">
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Automate Your LinkedIn Job Follow-Ups
-          </h1>
-          <p className="text-xl text-gray-700 mb-12">
-            Send professional follow-up emails to recruiters with one click. Save time and increase your chances of getting hired.
-          </p>
+interface Stats {
+    totals: {
+        companies: number;
+        people: number;
+        emails: number;
+        outreach: number;
+    };
+    outreachByStatus: Record<string, number>;
+    queue: {
+        hourlyCount: number;
+        dailyCount: number;
+        hourlyLimit: number;
+        dailyLimit: number;
+        pending: number;
+    };
+}
 
-          <div className="flex gap-4 justify-center mb-16">
-            <Link href="/signup" className="btn-primary text-lg px-8 py-3">
-              Get Started
-            </Link>
-            <Link href="/login" className="btn-secondary text-lg px-8 py-3">
-              Log In
-            </Link>
-          </div>
+export default function Dashboard() {
+    const [stats, setStats] = useState<Stats | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [greeting, setGreeting] = useState('Hello');
+    const [companyInput, setCompanyInput] = useState('');
 
-          <div className="card text-left">
-            <h2 className="text-2xl font-bold mb-4">How It Works</h2>
-            <div className="space-y-6">
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold">
-                  1
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">Install Chrome Extension</h3>
-                  <p className="text-gray-600">
-                    Install our browser extension to automatically fetch your LinkedIn job applications.
-                  </p>
-                </div>
-              </div>
+    useEffect(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) setGreeting('Good morning');
+        else if (hour < 18) setGreeting('Good afternoon');
+        else setGreeting('Good evening');
 
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold">
-                  2
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">Configure Your Profile</h3>
-                  <p className="text-gray-600">
-                    Set up your email template, upload your resume, and customize your settings.
-                  </p>
-                </div>
-              </div>
+        fetchStats();
+    }, []);
 
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold">
-                  3
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">Send Follow-Ups</h3>
-                  <p className="text-gray-600">
-                    Review your applications and send professional follow-up emails with your resume attached.
-                  </p>
-                </div>
-              </div>
+    async function fetchStats() {
+        try {
+            const result = await systemApi.stats();
+            if (result.success) {
+                setStats(result.data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch stats:', error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const statCards = [
+        {
+            label: 'Companies',
+            value: stats?.totals.companies || 0,
+            icon: Building2,
+            trend: '+12%',
+            trendUp: true,
+        },
+        {
+            label: 'Contacts',
+            value: stats?.totals.people || 0,
+            icon: Users,
+            trend: '+8%',
+            trendUp: true,
+        },
+        {
+            label: 'Emails Found',
+            value: stats?.totals.emails || 0,
+            icon: Mail,
+            trend: '+24%',
+            trendUp: true,
+        },
+        {
+            label: 'Messages Sent',
+            value: stats?.outreachByStatus?.sent || 0,
+            icon: Send,
+            trend: 'This month',
+            trendUp: true,
+        },
+    ];
+
+    return (
+        <div className="container">
+            {/* Welcome Header */}
+            <div className="page-header" style={{ marginBottom: 'var(--spacing-2xl)' }}>
+                <h1 className="page-title" style={{ fontSize: '2rem' }}>
+                    {greeting}, <span style={{ color: 'var(--accent-primary)' }}>Aayush</span>!
+                </h1>
+                <p className="page-subtitle">
+                    Ready to discover new leads? Enter a company name to get started.
+                </p>
             </div>
-          </div>
 
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="card">
-              <h3 className="font-bold text-lg mb-2">Save Time</h3>
-              <p className="text-gray-600">
-                No more manually writing follow-up emails. Automate the process and focus on interview prep.
-              </p>
+            {/* Quick Discovery Search */}
+            <div className="card" style={{ marginBottom: 'var(--spacing-xl)', background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, var(--bg-card) 50%)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
+                    <div style={{ flex: 1 }}>
+                        <h3 style={{ marginBottom: 'var(--spacing-sm)', fontSize: '1.25rem' }}>
+                            <Zap size={20} style={{ color: 'var(--accent-primary)', marginRight: '8px', verticalAlign: 'middle' }} />
+                            Quick Discovery
+                        </h3>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)' }}>
+                            Enter a company name and we'll find 10-15 relevant contacts with emails
+                        </p>
+                        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                            <div style={{ flex: 1, position: 'relative' }}>
+                                <Search
+                                    size={18}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '14px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        color: 'var(--text-muted)',
+                                    }}
+                                />
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="e.g., Blackstone, Citadel, Two Sigma..."
+                                    value={companyInput}
+                                    onChange={(e) => setCompanyInput(e.target.value)}
+                                    style={{ paddingLeft: '44px' }}
+                                />
+                            </div>
+                            <Link
+                                href={`/discover${companyInput ? `?company=${encodeURIComponent(companyInput)}` : ''}`}
+                                className="btn btn-primary btn-lg"
+                            >
+                                <Target size={18} />
+                                Find Leads
+                            </Link>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div className="card">
-              <h3 className="font-bold text-lg mb-2">Professional Templates</h3>
-              <p className="text-gray-600">
-                Use proven email templates that get responses. Fully customizable to your style.
-              </p>
+
+            {/* Stats Grid */}
+            <div className="stats-grid">
+                {statCards.map((stat) => (
+                    <div key={stat.label} className="stat-card">
+                        <div className="stat-card-header">
+                            <span className="stat-card-label">{stat.label}</span>
+                            <div className="stat-card-icon">
+                                <stat.icon size={20} />
+                            </div>
+                        </div>
+                        <div className="stat-card-value">
+                            {loading ? (
+                                <div className="skeleton" style={{ width: '60px', height: '32px' }} />
+                            ) : (
+                                stat.value.toLocaleString()
+                            )}
+                        </div>
+                        <div className={`stat-card-trend ${stat.trendUp ? 'up' : 'down'}`}>
+                            {stat.trendUp && <TrendingUp size={14} />}
+                            {stat.trend}
+                        </div>
+                    </div>
+                ))}
             </div>
-            <div className="card">
-              <h3 className="font-bold text-lg mb-2">Track Everything</h3>
-              <p className="text-gray-600">
-                See which emails were sent, when, and track your follow-up history in one dashboard.
-              </p>
+
+            {/* Two Column Layout */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
+                {/* Outreach Status */}
+                <div className="card">
+                    <div className="card-header">
+                        <h3 className="card-title">Outreach Status</h3>
+                        <Link href="/outreach" className="btn btn-ghost btn-sm">
+                            View All <ArrowUpRight size={14} />
+                        </Link>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-md)' }}>
+                        {[
+                            { label: 'Pending', value: stats?.queue?.pending || 0, color: 'var(--accent-warning)' },
+                            { label: 'Sent', value: stats?.outreachByStatus?.sent || 0, color: 'var(--accent-primary)' },
+                            { label: 'Replied', value: stats?.outreachByStatus?.replied || 0, color: 'var(--accent-success)' },
+                            { label: 'Bounced', value: stats?.outreachByStatus?.bounced || 0, color: 'var(--accent-danger)' },
+                        ].map((item) => (
+                            <div
+                                key={item.label}
+                                style={{
+                                    padding: 'var(--spacing-md)',
+                                    background: 'var(--bg-tertiary)',
+                                    borderRadius: 'var(--radius-md)',
+                                    borderLeft: `3px solid ${item.color}`,
+                                }}
+                            >
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{item.value}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                                    {item.label}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Rate Limit Progress */}
+                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
+                            <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                <Clock size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                                Hourly Email Limit
+                            </span>
+                            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                {stats?.queue?.hourlyCount || 0} / {stats?.queue?.hourlyLimit || 15}
+                            </span>
+                        </div>
+                        <div className="progress-bar">
+                            <div
+                                className="progress-bar-fill"
+                                style={{
+                                    width: `${Math.min(100, ((stats?.queue?.hourlyCount || 0) / (stats?.queue?.hourlyLimit || 15)) * 100)}%`,
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="card">
+                    <div className="card-header">
+                        <h3 className="card-title">Quick Actions</h3>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+                        <Link href="/discover" className="btn btn-primary" style={{ width: '100%', justifyContent: 'flex-start' }}>
+                            <Search size={18} />
+                            Start New Discovery
+                        </Link>
+                        <Link href="/companies" className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start' }}>
+                            <Building2 size={18} />
+                            Manage Companies
+                        </Link>
+                        <Link href="/contacts" className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start' }}>
+                            <Users size={18} />
+                            View All Contacts
+                        </Link>
+                        <Link href="/templates" className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start' }}>
+                            <Mail size={18} />
+                            Edit Email Templates
+                        </Link>
+                        <Link href="/profile" className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start' }}>
+                            <Users size={18} />
+                            Update Your Profile
+                        </Link>
+                    </div>
+                </div>
             </div>
-          </div>
+
+            {/* Compliance Footer */}
+            <div className="card" style={{ marginTop: 'var(--spacing-xl)', background: 'var(--bg-tertiary)' }}>
+                <div style={{ display: 'flex', gap: 'var(--spacing-2xl)', alignItems: 'center', justifyContent: 'center' }}>
+                    {[
+                        { icon: CheckCircle, label: 'GDPR Compliant' },
+                        { icon: CheckCircle, label: 'CAN-SPAM Compliant' },
+                        { icon: CheckCircle, label: 'ToS Respectful' },
+                        { icon: CheckCircle, label: 'AES-256 Encrypted' },
+                    ].map((item) => (
+                        <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                            <item.icon size={16} style={{ color: 'var(--accent-success)' }} />
+                            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{item.label}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }

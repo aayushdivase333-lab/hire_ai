@@ -1,102 +1,245 @@
-import axios, { AxiosError } from 'axios';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+async function fetchApi<T>(
+    endpoint: string,
+    options: RequestInit = {}
+): Promise<T> {
+    const url = `${API_BASE}${endpoint}`;
 
-// Create axios instance
-export const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // Clear auth token and redirect to login
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
-// Auth API
-export const authApi = {
-  signup: (data: any) => api.post('/auth/signup', data),
-  login: (data: any) => api.post('/auth/login', data),
-  me: () => api.get('/auth/me'),
-  refresh: () => api.post('/auth/refresh'),
-};
-
-// Profile API
-export const profileApi = {
-  update: (data: any) => api.put('/profile', data),
-  getApiToken: (regenerate?: boolean) =>
-    api.get('/profile/api-token', { params: { regenerate } }),
-};
-
-// Resume API
-export const resumeApi = {
-  upload: (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return api.post('/resume/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
     });
-  },
-  get: () => api.get('/resume'),
-  download: () => api.get('/resume/download', { responseType: 'blob' }),
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || 'An error occurred');
+    }
+
+    return data;
+}
+
+// Companies API
+export const companiesApi = {
+    list: (params?: { page?: number; search?: string }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.set('page', params.page.toString());
+        if (params?.search) searchParams.set('search', params.search);
+        return fetchApi(`/companies?${searchParams}`);
+    },
+
+    get: (id: string) => fetchApi(`/companies/${id}`),
+
+    create: (data: { name: string; domain?: string; website_url?: string; notes?: string }) =>
+        fetchApi('/companies', { method: 'POST', body: JSON.stringify(data) }),
+
+    update: (id: string, data: Partial<{ name: string; domain: string; notes: string }>) =>
+        fetchApi(`/companies/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+    delete: (id: string) => fetchApi(`/companies/${id}`, { method: 'DELETE' }),
+
+    deleteByDomain: (domain: string) =>
+        fetchApi(`/companies/domain/${domain}`, { method: 'DELETE' }),
 };
 
-// Email template API
-export const emailTemplateApi = {
-  get: () => api.get('/email-template'),
-  update: (data: any) => api.put('/email-template', data),
-  preview: (data: any) => api.post('/email-template/preview', data),
+// People API
+export const peopleApi = {
+    list: (params?: { page?: number; company_id?: string; search?: string; seniority?: string }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.set('page', params.page.toString());
+        if (params?.company_id) searchParams.set('company_id', params.company_id);
+        if (params?.search) searchParams.set('search', params.search);
+        if (params?.seniority) searchParams.set('seniority', params.seniority);
+        return fetchApi(`/people?${searchParams}`);
+    },
+
+    get: (id: string) => fetchApi(`/people/${id}`),
+
+    create: (data: {
+        company_id: string;
+        full_name: string;
+        first_name: string;
+        last_name: string;
+        title?: string;
+        location?: string;
+        linkedin_url?: string;
+        source?: string;
+    }) => fetchApi('/people', { method: 'POST', body: JSON.stringify(data) }),
+
+    update: (id: string, data: Partial<{
+        full_name: string;
+        first_name: string;
+        last_name: string;
+        title: string;
+        location: string;
+        linkedin_url: string;
+    }>) => fetchApi(`/people/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+    delete: (id: string) => fetchApi(`/people/${id}`, { method: 'DELETE' }),
+
+    markDoNotContact: (id: string) =>
+        fetchApi(`/people/${id}/do-not-contact`, { method: 'POST' }),
+
+    generateEmails: (id: string) =>
+        fetchApi(`/people/${id}/generate-emails`, { method: 'POST' }),
+
+    validateEmails: (id: string, skipSmtp = true) =>
+        fetchApi(`/people/${id}/validate-emails`, {
+            method: 'POST',
+            body: JSON.stringify({ skipSmtp }),
+        }),
+
+    addEmail: (id: string, email: string, confidence = 'high') =>
+        fetchApi(`/people/${id}/add-email`, {
+            method: 'POST',
+            body: JSON.stringify({ email, confidence }),
+        }),
+
+    setPrimaryEmail: (personId: string, emailId: string) =>
+        fetchApi(`/people/${personId}/emails/${emailId}/primary`, { method: 'PUT' }),
 };
 
-// Applications API
-export const applicationsApi = {
-  list: (params?: any) => api.get('/applications', { params }),
-  get: (id: string) => api.get(`/applications/${id}`),
-  update: (id: string, data: any) => api.put(`/applications/${id}`, data),
-  delete: (id: string) => api.delete(`/applications/${id}`),
-  sync: (data: any) => api.post('/applications/sync', data),
+// Templates API
+export const templatesApi = {
+    list: (params?: { type?: string; offer_type?: string; active?: boolean }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.type) searchParams.set('type', params.type);
+        if (params?.offer_type) searchParams.set('offer_type', params.offer_type);
+        if (params?.active !== undefined) searchParams.set('active', params.active.toString());
+        return fetchApi(`/templates?${searchParams}`);
+    },
+
+    get: (id: string) => fetchApi(`/templates/${id}`),
+
+    create: (data: {
+        name: string;
+        subject: string;
+        body: string;
+        template_type: string;
+        offer_type: string;
+    }) => fetchApi('/templates', { method: 'POST', body: JSON.stringify(data) }),
+
+    update: (id: string, data: Partial<{
+        name: string;
+        subject: string;
+        body: string;
+        is_active: boolean;
+    }>) => fetchApi(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+    delete: (id: string) => fetchApi(`/templates/${id}`, { method: 'DELETE' }),
+
+    preview: (id: string, variables?: Record<string, string>) =>
+        fetchApi(`/templates/${id}/preview`, {
+            method: 'POST',
+            body: JSON.stringify(variables || {}),
+        }),
+
+    duplicate: (id: string) =>
+        fetchApi(`/templates/${id}/duplicate`, { method: 'POST' }),
 };
 
-// Email API
-export const emailApi = {
-  send: (data: any) => api.post('/emails/send', data),
-  sendSingle: (applicationId: string) =>
-    api.post(`/emails/send/${applicationId}`),
-  logs: (params?: any) => api.get('/emails/logs', { params }),
+// Outreach API
+export const outreachApi = {
+    list: (params?: { page?: number; status?: string; person_id?: string }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.set('page', params.page.toString());
+        if (params?.status) searchParams.set('status', params.status);
+        if (params?.person_id) searchParams.set('person_id', params.person_id);
+        return fetchApi(`/outreach?${searchParams}`);
+    },
+
+    get: (id: string) => fetchApi(`/outreach/${id}`),
+
+    create: (data: {
+        person_id: string;
+        subject: string;
+        body: string;
+        template_id?: string;
+        schedule_at?: string;
+    }) => fetchApi('/outreach', { method: 'POST', body: JSON.stringify(data) }),
+
+    createBulk: (data: {
+        person_ids: string[];
+        template_id: string;
+        custom_variables?: Record<string, string>;
+        schedule_at?: string;
+    }) => fetchApi('/outreach/bulk', { method: 'POST', body: JSON.stringify(data) }),
+
+    send: (id: string) => fetchApi(`/outreach/${id}/send`, { method: 'POST' }),
+
+    cancel: (id: string) => fetchApi(`/outreach/${id}/cancel`, { method: 'POST' }),
+
+    markReplied: (id: string) => fetchApi(`/outreach/${id}/mark-replied`, { method: 'POST' }),
+
+    delete: (id: string) => fetchApi(`/outreach/${id}`, { method: 'DELETE' }),
+
+    getStats: () => fetchApi('/outreach/stats'),
 };
 
-// Settings API
-export const settingsApi = {
-  get: () => api.get('/settings'),
-  update: (data: any) => api.put('/settings', data),
+// Discovery API
+export const discoveryApi = {
+    getSuggestions: (companyName: string) =>
+        fetchApi(`/discovery/suggestions?companyName=${encodeURIComponent(companyName)}`),
+
+    discoverDomain: (companyName: string, website?: string) =>
+        fetchApi('/discovery/company-domain', {
+            method: 'POST',
+            body: JSON.stringify({ companyName, website }),
+        }),
+
+    parseLinkedIn: (data: {
+        linkedinUrl?: string;
+        fullName: string;
+        title?: string;
+        location?: string;
+        companyId: string;
+    }) => fetchApi('/discovery/parse-linkedin', { method: 'POST', body: JSON.stringify(data) }),
+
+    generateEmails: (firstName: string, lastName: string, domain: string) =>
+        fetchApi('/discovery/generate-emails', {
+            method: 'POST',
+            body: JSON.stringify({ firstName, lastName, domain }),
+        }),
+
+    batchEmails: (companyId: string, personIds?: string[]) =>
+        fetchApi('/discovery/batch-emails', {
+            method: 'POST',
+            body: JSON.stringify({ companyId, personIds }),
+        }),
+
+    autoDiscover: (companyName: string, options?: { roles?: string[]; maxResults?: number }) =>
+        fetchApi('/discovery/auto', {
+            method: 'POST',
+            body: JSON.stringify({ companyName, ...options }),
+        }),
 };
 
-// Dashboard API
-export const dashboardApi = {
-  stats: () => api.get('/dashboard/stats'),
-  syncHistory: (params?: any) => api.get('/dashboard/sync-history', { params }),
+// System API
+export const systemApi = {
+    health: () => fetchApi('/health'),
+    stats: () => fetchApi('/stats'),
+    settings: () => fetchApi('/settings'),
+    audit: (page = 1) => fetchApi(`/audit?page=${page}`),
+    unsubscribe: (token: string, email: string) =>
+        fetchApi(`/unsubscribe/${token}`, {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        }),
+    cleanup: (days?: number) =>
+        fetchApi(`/data/cleanup${days ? `?days=${days}` : ''}`, { method: 'DELETE' }),
+    deleteAll: () =>
+        fetchApi('/data/delete-all?confirm=yes-delete-everything', { method: 'DELETE' }),
+};
+
+export default {
+    companies: companiesApi,
+    people: peopleApi,
+    templates: templatesApi,
+    outreach: outreachApi,
+    discovery: discoveryApi,
+    system: systemApi,
 };

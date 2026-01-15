@@ -1,417 +1,255 @@
-# LinkedIn Job Application Follow-up System
+# LeadGen - Privacy-First Lead Finder & Cold Email System
 
-A production-ready full-stack application that automates follow-up emails for LinkedIn job applications. Built with Node.js, React, Next.js, PostgreSQL, and Chrome Extensions.
+A sophisticated, privacy-respecting lead finder and cold email sender built for boutique firms and family offices. Find contacts, generate emails, and send personalized outreach - all while staying 100% legal and ToS-compliant.
 
-## Overview
+![LeadGen Dashboard](./docs/dashboard.png)
 
-This system helps job seekers follow up on their LinkedIn applications by:
-- Automatically fetching job applications from LinkedIn via Chrome extension
-- Storing application details and recruiter contact information
-- Sending professional follow-up emails with resume attachments
-- Tracking email delivery and managing application status
+## ✨ Features
 
-## Architecture
+### 🎯 One-Click Discovery
+- Enter a company name → System finds 10-15 relevant contacts automatically
+- Select target roles (Partner, C-Level, Director, VP, etc.)
+- Review and approve before adding contacts
 
-### Backend (Node.js + Express + PostgreSQL)
-- RESTful API with JWT authentication
-- PostgreSQL database with comprehensive data models
-- Email service with Nodemailer
-- File upload handling for resume PDFs
-- Rate limiting and security middleware
+### 📧 Smart Email Generation
+- Auto-generate email addresses based on common patterns
+- MX record validation to verify domain exists
+- Multiple candidates ranked by confidence
 
-### Frontend (Next.js + React + TypeScript)
-- Server-side rendered React application
-- Zustand for state management
-- Tailwind CSS for styling
-- Dashboard for managing applications
-- Email template customization
-- Resume upload and management
+### 📝 Template System
+- Customizable email templates with variables
+- Variables: `{{first_name}}`, `{{company_name}}`, `{{role}}`, `{{my_service_summary}}`
+- Preview with sample data before sending
 
-### Chrome Extension
-- Content script to extract LinkedIn application data
-- Background service worker for sync operations
-- Popup UI for quick sync actions
-- Options page for configuration
+### 📤 Outreach Management
+- Queue emails with rate limiting (CAN-SPAM compliant)
+- Track status: Draft → Queued → Sent → Replied
+- Mark replies, cancel pending, view history
 
-## Project Structure
+### 📎 Document Attachments
+- Upload portfolios, case studies, rate cards
+- Attach to outreach emails automatically
+
+### 👤 Profile Management
+- Store your info for email personalization
+- Configure services you offer
+- Custom email signature
+
+### 🔒 Privacy & Compliance
+- **GDPR Compliant**: Delete data on request
+- **CAN-SPAM Compliant**: Opt-out in every email
+- **AES-256 Encryption**: Emails encrypted at rest
+- **ToS Compliant**: No LinkedIn scraping/automation
+
+## 🏗️ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 14, React, TypeScript |
+| Backend | Node.js, Express, TypeScript |
+| Database | SQLite (better-sqlite3) |
+| Email | Nodemailer (SMTP) |
+| Styling | Custom CSS (Dark theme) |
+| Encryption | CryptoJS (AES-256) |
+
+## 📁 Project Structure
 
 ```
-hire ai/
-├── backend/                    # Backend API
-│   ├── src/
-│   │   ├── config/            # Database and configuration
-│   │   ├── controllers/       # API controllers
-│   │   ├── middleware/        # Auth, validation middleware
-│   │   ├── models/            # TypeScript type definitions
-│   │   ├── routes/            # API routes
-│   │   ├── services/          # Business logic (email service)
-│   │   ├── utils/             # Helper functions
-│   │   └── server.ts          # Main server file
+leadgen/
+├── package.json              # Monorepo root
+├── README.md
+├── .gitignore
+│
+├── backend/
+│   ├── .env.example          # Environment template
 │   ├── package.json
 │   ├── tsconfig.json
-│   └── .env.example
-│
-├── frontend/                   # Frontend web app
 │   ├── src/
-│   │   ├── app/               # Next.js pages
-│   │   ├── components/        # React components
-│   │   ├── lib/               # API client and utilities
-│   │   └── store/             # Zustand stores
+│   │   ├── index.ts          # Express server
+│   │   ├── config.ts         # Configuration
+│   │   ├── db/
+│   │   │   ├── database.ts   # SQLite schema
+│   │   │   ├── migrate.ts    # Migrations
+│   │   │   └── seed.ts       # Default templates
+│   │   ├── routes/
+│   │   │   ├── companies.ts
+│   │   │   ├── people.ts
+│   │   │   ├── templates.ts
+│   │   │   ├── outreach.ts
+│   │   │   ├── discovery.ts
+│   │   │   └── system.ts
+│   │   ├── services/
+│   │   │   ├── discovery.ts
+│   │   │   ├── emailDiscovery.ts
+│   │   │   ├── emailSender.ts
+│   │   │   └── queue.ts
+│   │   └── utils/
+│   │       └── encryption.ts
+│   └── tests/
+│
+├── frontend/
+│   ├── .env.example
 │   ├── package.json
+│   ├── next.config.js
 │   ├── tsconfig.json
-│   └── next.config.js
+│   └── src/
+│       ├── app/
+│       │   ├── layout.tsx
+│       │   ├── page.tsx          # Dashboard
+│       │   ├── discover/         # Lead discovery
+│       │   ├── companies/        # Company management
+│       │   ├── contacts/         # Contact management
+│       │   ├── templates/        # Email templates
+│       │   ├── outreach/         # Campaign sender
+│       │   ├── documents/        # File attachments
+│       │   ├── profile/          # Your profile
+│       │   └── settings/         # System settings
+│       ├── components/
+│       ├── lib/
+│       └── styles/
 │
-├── chrome-extension/          # Chrome extension
-│   ├── manifest.json
-│   ├── content.js             # Content script for LinkedIn
-│   ├── background.js          # Background service worker
-│   ├── popup.html/js          # Extension popup
-│   └── options.html/js        # Extension settings
-│
-├── database-schema.sql        # PostgreSQL database schema
-├── API-DOCUMENTATION.md       # Complete API documentation
-└── README.md                  # This file
+└── shared/
+    └── types.ts              # Shared TypeScript types
 ```
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Node.js 18+ and npm
-- PostgreSQL 14+
-- Chrome browser (for extension)
-- Email account (Gmail recommended for SMTP)
+### Prerequisites
+- Node.js 18+ with npm
+- SMTP credentials (Gmail, SendGrid, etc.)
 
-## Installation
-
-### 1. Database Setup
+### Installation
 
 ```bash
-# Create PostgreSQL database
-createdb linkedin_followup
-
-# Run the schema
-psql linkedin_followup < database-schema.sql
-```
-
-### 2. Backend Setup
-
-```bash
-cd backend
+# Clone the repository
+git clone https://github.com/yourusername/leadgen.git
+cd leadgen
 
 # Install dependencies
 npm install
 
-# Copy environment file
-cp .env.example .env
+# Configure environment
+cp backend/.env.example backend/.env
+# Edit backend/.env with your SMTP credentials
 
-# Edit .env with your configuration
-# Required: DATABASE_URL, JWT_SECRET, EMAIL credentials
-nano .env
+# Initialize database
+npm run migrate
 
-# Build TypeScript
-npm run build
+# Seed default templates
+npm run seed
 
-# Start development server
+# Start development servers
 npm run dev
 ```
 
-Backend runs on http://localhost:3000
+### Access
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
 
-### 3. Frontend Setup
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-Frontend runs on http://localhost:3001
-
-### 4. Chrome Extension Setup
-
-```bash
-# Open Chrome and go to: chrome://extensions/
-# Enable "Developer mode"
-# Click "Load unpacked"
-# Select the chrome-extension/ directory
-```
-
-## Configuration
+## ⚙️ Configuration
 
 ### Backend Environment Variables
 
-Edit `backend/.env`:
-
 ```env
-# Database
-DATABASE_URL=postgresql://username:password@localhost:5432/linkedin_followup
-
-# JWT Secret (generate a strong random string)
-JWT_SECRET=your-super-secret-jwt-key-change-this
-
-# Email Configuration (Gmail example)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASSWORD=your-app-specific-password
-EMAIL_FROM_ADDRESS=your-email@gmail.com
-
 # Server
-PORT=3000
+PORT=3001
 NODE_ENV=development
-CORS_ORIGIN=http://localhost:3001
+
+# Database
+DATABASE_PATH=./data/leadfinder.db
+
+# Encryption (generate a secure 32+ char key)
+ENCRYPTION_KEY=your-super-secret-key-minimum-32-chars
+
+# SMTP (example: Gmail)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+FROM_EMAIL=your-email@gmail.com
+FROM_NAME=Your Name
+
+# Rate Limiting
+HOURLY_EMAIL_LIMIT=15
+DAILY_EMAIL_LIMIT=100
+MIN_EMAIL_DELAY_MS=180000
+
+# Your Identity (for templates)
+MY_NAME=Your Name
+MY_EMAIL=your-email@gmail.com
+MY_SERVICE_SUMMARY=I help firms modernize their digital presence.
+
+# Data Retention
+DATA_RETENTION_DAYS=90
 ```
 
-### Email Setup (Gmail)
+## 📋 Workflow
 
-1. Enable 2-factor authentication on your Google account
-2. Generate an App Password: https://myaccount.google.com/apppasswords
-3. Use the app password in EMAIL_PASSWORD (not your regular password)
+1. **Add Company** → Enter name + website
+2. **Discover Contacts** → Select roles, system finds people
+3. **Generate Emails** → Auto-create email addresses
+4. **Choose Template** → Personalized with variables
+5. **Send Outreach** → Rate-limited, compliant
+6. **Track Results** → Monitor replies, follow up
 
-### Chrome Extension Configuration
+## 🔐 Security Features
 
-1. Create an account on the web app
-2. Navigate to Dashboard → LinkedIn Setup
-3. Copy your API token
-4. Open extension options (right-click extension icon → Options)
-5. Paste API token and save
+| Feature | Implementation |
+|---------|----------------|
+| Email encryption | AES-256 at rest |
+| Unsubscribe tracking | SHA-256 email hash |
+| Rate limiting | Per-hour/day limits |
+| Request throttling | Express rate-limit |
+| CORS protection | Configurable origins |
+| SQL injection | Parameterized queries |
 
-## Usage
+## 📈 API Endpoints
 
-### User Flow
+### Companies
+- `GET /api/companies` - List companies
+- `POST /api/companies` - Create company
+- `DELETE /api/companies/:id` - Delete company
 
-1. **Sign Up**
-   - Visit http://localhost:3001
-   - Create an account with email and password
-   - Fill in profile details (name, phone, LinkedIn URL)
+### People
+- `GET /api/people` - List contacts
+- `POST /api/people` - Create contact
+- `POST /api/people/:id/generate-emails` - Generate emails
 
-2. **Upload Resume**
-   - Navigate to Dashboard → Resume
-   - Upload PDF resume (max 5MB)
+### Discovery
+- `POST /api/discovery/auto` - Auto-discover contacts
+- `GET /api/discovery/suggestions` - Get search queries
 
-3. **Configure Email Template**
-   - Navigate to Dashboard → Email Template
-   - Customize subject and body with placeholders
-   - Preview with sample data
+### Outreach
+- `GET /api/outreach` - List messages
+- `POST /api/outreach` - Create message
+- `POST /api/outreach/bulk` - Bulk send
+- `POST /api/outreach/:id/send` - Send now
 
-4. **Install Chrome Extension**
-   - Load extension in Chrome
-   - Configure API token in extension options
+### Templates
+- `GET /api/templates` - List templates
+- `POST /api/templates` - Create template
+- `POST /api/templates/:id/preview` - Preview with variables
 
-5. **Sync LinkedIn Applications**
-   - Visit LinkedIn jobs page (linkedin.com/jobs)
-   - Click extension icon
-   - Click "Sync LinkedIn Applications"
-
-6. **Send Follow-up Emails**
-   - Review applications in Dashboard
-   - Select applications to follow up
-   - Click "Send Emails"
-   - Monitor status and logs
-
-### Email Template Placeholders
-
-Available placeholders for email customization:
-
-- `{{recruiter_name}}` - Recruiter or hiring manager name
-- `{{company_name}}` - Company name
-- `{{job_title}}` - Job position title
-- `{{job_location}}` - Job location
-- `{{application_id}}` - Application reference ID
-- `{{application_date}}` - Date of application
-- `{{job_link}}` - LinkedIn job posting URL
-- `{{candidate_name}}` - Your full name
-- `{{candidate_email}}` - Your preferred email
-- `{{candidate_phone}}` - Your phone number
-
-## API Documentation
-
-See [API-DOCUMENTATION.md](./API-DOCUMENTATION.md) for complete API reference.
-
-Base URL: `http://localhost:3000/api/v1`
-
-### Key Endpoints
-
-- `POST /auth/signup` - Create account
-- `POST /auth/login` - Login
-- `GET /applications` - List applications
-- `POST /applications/sync` - Sync from LinkedIn
-- `POST /emails/send` - Send follow-up emails
-- `POST /resume/upload` - Upload resume
-- `PUT /email-template` - Update email template
-
-## Security Features
-
-- JWT authentication with secure token storage
-- API token authentication for Chrome extension
-- Password hashing with bcrypt
-- SQL injection prevention with parameterized queries
-- Input validation with Joi
-- Rate limiting on API endpoints
-- CORS protection
-- Helmet security headers
-- File upload validation (PDF only, max 5MB)
-
-## Rate Limiting
-
-Default limits:
-- API: 100 requests per 15 minutes
-- Emails: 10 per day (configurable per user)
-- Email rate: 1 every 5 minutes (configurable)
-
-## Development
-
-### Running Tests
+## 🧪 Testing
 
 ```bash
-# Backend tests
+# Run backend tests
 cd backend
 npm test
 
-# Frontend tests
-cd frontend
-npm test
+# Run with coverage
+npm run test:coverage
 ```
 
-### Database Migrations
+## 📄 License
 
-```bash
-cd backend
-npm run migrate
-```
+MIT License - feel free to use for your own lead generation needs.
 
-### Building for Production
+## 🤝 Contributing
 
-```bash
-# Backend
-cd backend
-npm run build
-npm start
+Contributions welcome! Please read our contributing guidelines.
 
-# Frontend
-cd frontend
-npm run build
-npm start
-```
+---
 
-## Deployment
-
-### Backend Deployment
-
-1. Set up PostgreSQL database on hosting provider
-2. Configure environment variables
-3. Deploy to platform (Heroku, Railway, AWS, etc.)
-4. Run database migrations
-
-### Frontend Deployment
-
-1. Update `NEXT_PUBLIC_API_URL` environment variable
-2. Deploy to Vercel, Netlify, or similar
-3. Configure custom domain if needed
-
-### Chrome Extension Publishing
-
-1. Create developer account on Chrome Web Store
-2. Package extension as .zip
-3. Upload and submit for review
-4. Update manifest.json with production API URL
-
-## Troubleshooting
-
-### Database Connection Issues
-- Verify PostgreSQL is running: `pg_isready`
-- Check DATABASE_URL in .env
-- Ensure database exists: `psql -l`
-
-### Email Sending Failures
-- Verify SMTP credentials
-- Check Gmail app password (not regular password)
-- Ensure "Less secure app access" is enabled if not using app password
-- Check firewall/network settings for SMTP port
-
-### Chrome Extension Not Working
-- Verify API token is correct
-- Check extension has LinkedIn permissions
-- Inspect background service worker console for errors
-- Ensure backend API is accessible
-
-### CORS Errors
-- Verify CORS_ORIGIN in backend .env matches frontend URL
-- Check browser console for specific CORS errors
-
-## File Size Limits
-
-- Resume PDF: 5MB maximum
-- Email attachments: 10MB total
-- API request body: 10MB
-
-## Browser Support
-
-- Chrome/Edge: Full support
-- Firefox: Not supported (Chrome extension only)
-- Safari: Not supported
-
-## Technology Stack
-
-**Backend:**
-- Node.js 20+
-- Express.js
-- TypeScript
-- PostgreSQL
-- Nodemailer
-- JWT
-- Bcrypt
-- Multer
-
-**Frontend:**
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
-- Zustand
-- Axios
-
-**Chrome Extension:**
-- Manifest V3
-- Vanilla JavaScript
-- Chrome Storage API
-
-## Contributing
-
-1. Fork the repository
-2. Create feature branch
-3. Make changes with tests
-4. Submit pull request
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Support
-
-For issues and questions:
-- GitHub Issues: [repository]/issues
-- Email: support@example.com
-
-## Roadmap
-
-Future enhancements:
-- Multiple resume versions
-- A/B testing email templates
-- Analytics dashboard
-- Recruiter contact database
-- Email scheduling
-- Follow-up reminders
-- Integration with other job platforms
-- Mobile app
-
-## Version
-
-Current version: 1.0.0
-
-## Authors
-
-Built as a production-ready system for automating LinkedIn job application follow-ups.
+**Built with ❤️ for boutique firms and solo entrepreneurs**
