@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extension Settings - LinkedIn Job Follow-up</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f9fafb;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+
+    .subtitle {
+      color: #6b7280;
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .help-text {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+
+    .info-box {
+      background: #dbeafe;
+      border: 1px solid #93c5fd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .info-box h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e40af;
+      margin-bottom: 8px;
+    }
+
+    .info-box p {
+      font-size: 13px;
+      color: #1e3a8a;
+      line-height: 1.5;
+    }
+
+    .info-box ol {
+      margin-top: 8px;
+      margin-left: 20px;
+      font-size: 13px;
+      color: #1e3a8a;
+    }
+
+    .info-box li {
+      margin-bottom: 4px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-primary:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      margin-left: 8px;
+    }
+
+    .btn-secondary:hover {
+      background: #f9fafb;
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .message-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+
+    .message-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    .link {
+      color: #3b82f6;
+      text-decoration: none;
+    }
+
+    .link:hover {
+      text-decoration: underline;
+    }
+
+    .divider {
+      height: 1px;
+      background: #e5e7eb;
+      margin: 32px 0;
+    }
+
+    .version {
+      text-align: center;
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Extension Settings</h1>
+    <p class="subtitle">Configure your LinkedIn Job Follow-up extension</p>
+
+    <div class="info-box">
+      <h3>How to get your API token:</h3>
+      <ol>
+        <li>Log in to the web dashboard</li>
+        <li>Go to LinkedIn Setup page</li>
+        <li>Copy your API token</li>
+        <li>Paste it below</li>
+      </ol>
+    </div>
+
+    <form id="settingsForm">
+      <div class="form-group">
+        <label for="apiToken">API Token *</label>
+        <input
+          type="password"
+          id="apiToken"
+          placeholder="Paste your API token here"
+          required
+        />
+        <p class="help-text">
+          Your API token connects this extension to your account. Keep it secure and don't share it.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="apiUrl">API URL</label>
+        <input
+          type="url"
+          id="apiUrl"
+          value="http://localhost:3000/api/v1"
+        />
+        <p class="help-text">
+          Default: http://localhost:3000/api/v1 (change only if using custom deployment)
+        </p>
+      </div>
+
+      <div class="form-group">
+        <button type="submit" id="saveButton" class="btn-primary">
+          Save Settings
+        </button>
+        <button type="button" id="testButton" class="btn-secondary">
+          Test Connection
+        </button>
+      </div>
+
+      <div id="message" class="message"></div>
+    </form>
+
+    <div class="divider"></div>
+
+    <div style="text-align: center;">
+      <a href="http://localhost:3001/dashboard" target="_blank" class="link">
+        Open Web Dashboard
+      </a>
+    </div>
+
+    <div class="version">
+      LinkedIn Job Follow-up Extension v1.0.0
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

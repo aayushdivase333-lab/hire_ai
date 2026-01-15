@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version:*)",
+      "Bash(brew install:*)",
+      "Bash(brew services start:*)",
+      "Bash(export PATH=\"/opt/homebrew/opt/postgresql@14/bin:$PATH\")",
+      "Bash(createdb:*)",
+      "Bash(psql:*)",
+      "Bash(brew services stop:*)",
+      "Bash(/opt/homebrew/opt/postgresql@14/bin/initdb:*)"
+    ]
+  }
+}

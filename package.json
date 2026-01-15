@@ -1,0 +1,32 @@
+{
+  "name": "linkedin-followup-monorepo",
+  "version": "1.0.0",
+  "description": "LinkedIn job application follow-up automation system",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
+    "db:setup": "psql -c 'CREATE DATABASE linkedin_followup;' && psql linkedin_followup < database-schema.sql",
+    "db:reset": "psql -c 'DROP DATABASE IF EXISTS linkedin_followup;' && npm run db:setup"
+  },
+  "keywords": [
+    "linkedin",
+    "job-search",
+    "automation",
+    "email",
+    "chrome-extension"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
