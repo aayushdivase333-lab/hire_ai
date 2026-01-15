@@ -1,29 +1,73 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Settings,
+    User,
     Mail,
-    Shield,
-    Database,
-    Clock,
-    AlertCircle,
+    Globe,
+    Linkedin,
+    FileText,
+    Save,
     CheckCircle,
+    AlertCircle,
+    Upload,
     Trash2,
-    Download,
-    RefreshCw,
+    Shield,
+    Clock,
 } from 'lucide-react';
-import { systemApi } from '@/lib/api';
+
+interface UserProfile {
+    fullName: string;
+    role: string;
+    bio: string;
+    linkedinUrl: string;
+    portfolioUrl: string;
+    resumePath: string;
+    email: string;
+}
+
+interface SmtpConfig {
+    host: string;
+    port: string;
+    secure: boolean;
+    user: string;
+    password: string;
+}
 
 export default function SettingsPage() {
-    const [loading, setLoading] = useState(true);
-    const [settings, setSettings] = useState<any>(null);
-    const [health, setHealth] = useState<any>(null);
+    const [activeTab, setActiveTab] = useState<'profile' | 'email' | 'attachments'>('profile');
+    const [profile, setProfile] = useState<UserProfile>({
+        fullName: '',
+        role: '',
+        bio: '',
+        linkedinUrl: '',
+        portfolioUrl: '',
+        resumePath: '',
+        email: '',
+    });
+    const [smtp, setSmtp] = useState<SmtpConfig>({
+        host: 'smtp.gmail.com',
+        port: '587',
+        secure: false,
+        user: '',
+        password: '',
+    });
+    const [attachments, setAttachments] = useState<{ name: string; path: string; type: string }[]>([]);
+    const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-    const [cleanupDays, setCleanupDays] = useState(90);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        fetchData();
+        // Load from localStorage
+        const storedProfile = localStorage.getItem('outreach_profile');
+        if (storedProfile) setProfile(JSON.parse(storedProfile));
+
+        const storedSmtp = localStorage.getItem('outreach_smtp');
+        if (storedSmtp) setSmtp(JSON.parse(storedSmtp));
+
+        const storedAttachments = localStorage.getItem('outreach_attachments');
+        if (storedAttachments) setAttachments(JSON.parse(storedAttachments));
     }, []);
 
     useEffect(() => {
@@ -33,236 +77,320 @@ export default function SettingsPage() {
         }
     }, [toast]);
 
-    async function fetchData() {
-        setLoading(true);
+    function saveAll() {
+        setSaving(true);
         try {
-            const [healthResult, settingsResult] = await Promise.all([
-                systemApi.health() as any,
-                systemApi.settings() as any,
-            ]);
-            if (healthResult?.success) setHealth(healthResult.data);
-            if (settingsResult?.success) setSettings(settingsResult.data);
+            localStorage.setItem('outreach_profile', JSON.stringify(profile));
+            localStorage.setItem('outreach_smtp', JSON.stringify(smtp));
+            localStorage.setItem('outreach_attachments', JSON.stringify(attachments));
+            setToast({ message: 'Settings saved!', type: 'success' });
         } catch (error) {
-            console.error('Failed to fetch settings:', error);
-        } finally {
-            setLoading(false);
+            setToast({ message: 'Failed to save settings', type: 'error' });
         }
+        setSaving(false);
     }
 
-    async function handleCleanup() {
-        if (!confirm(`This will delete all data older than ${cleanupDays} days. Continue?`)) return;
-        try {
-            await systemApi.cleanup(cleanupDays);
-            setToast({ message: 'Cleanup completed', type: 'success' });
-            fetchData();
-        } catch (error: any) {
-            setToast({ message: error.message, type: 'error' });
+    function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+        const files = e.target.files;
+        if (!files) return;
+
+        const newAttachments = [...attachments];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            newAttachments.push({
+                name: file.name,
+                path: URL.createObjectURL(file),
+                type: file.name.includes('resume') ? 'resume' : 'portfolio',
+            });
         }
+        setAttachments(newAttachments);
+        if (fileInputRef.current) fileInputRef.current.value = '';
     }
 
-    async function handleDeleteAll() {
-        const confirmText = prompt('Type "DELETE ALL DATA" to confirm:');
-        if (confirmText !== 'DELETE ALL DATA') {
-            setToast({ message: 'Deletion cancelled', type: 'error' });
-            return;
-        }
-        try {
-            await systemApi.deleteAll();
-            setToast({ message: 'All data deleted', type: 'success' });
-            fetchData();
-        } catch (error: any) {
-            setToast({ message: error.message, type: 'error' });
-        }
-    }
-
-    if (loading) {
-        return (
-            <div className="container" style={{ display: 'flex', justifyContent: 'center', paddingTop: '20vh' }}>
-                <div className="spinner spinner-lg" />
-            </div>
-        );
+    function removeAttachment(index: number) {
+        setAttachments(attachments.filter((_, i) => i !== index));
     }
 
     return (
-        <div className="container">
+        <div className="container" style={{ maxWidth: '800px' }}>
             {/* Toast */}
             {toast && (
                 <div className="toast-container">
                     <div className={`toast toast-${toast.type}`}>
-                        {toast.type === 'success' ? (
-                            <CheckCircle size={18} style={{ color: 'var(--accent-success)' }} />
-                        ) : (
-                            <AlertCircle size={18} style={{ color: 'var(--accent-danger)' }} />
-                        )}
+                        {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
                         <span>{toast.message}</span>
                     </div>
                 </div>
             )}
 
             {/* Header */}
-            <div className="page-header">
-                <h1 className="page-title">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-xl)' }}>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
                     <Settings size={28} style={{ color: 'var(--accent-primary)' }} />
                     Settings
                 </h1>
-                <p className="page-subtitle">
-                    Configure your lead finder settings and manage data
-                </p>
+                <button className="btn btn-primary" onClick={saveAll} disabled={saving}>
+                    {saving ? <span className="spinner" /> : <Save size={18} />}
+                    Save All
+                </button>
             </div>
 
-            {/* System Health */}
-            <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <h3 style={{ marginBottom: 'var(--spacing-lg)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-                    <Database size={20} style={{ color: 'var(--accent-primary)' }} />
-                    System Health
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-md)' }}>
-                    <div style={{ padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Status</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-success)' }} />
-                            <span style={{ fontWeight: 600 }}>{health?.status || 'Online'}</span>
-                        </div>
-                    </div>
-                    <div style={{ padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Database</div>
-                        <div style={{ fontWeight: 600, marginTop: '4px' }}>{health?.database || 'Connected'}</div>
-                    </div>
-                    <div style={{ padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Uptime</div>
-                        <div style={{ fontWeight: 600, marginTop: '4px' }}>{health?.uptime || '—'}</div>
-                    </div>
-                    <div style={{ padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Version</div>
-                        <div style={{ fontWeight: 600, marginTop: '4px' }}>1.0.0</div>
-                    </div>
-                </div>
+            {/* Tabs */}
+            <div className="tabs" style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <button className={`tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
+                    <User size={16} style={{ marginRight: 6 }} />
+                    Your Profile
+                </button>
+                <button className={`tab ${activeTab === 'email' ? 'active' : ''}`} onClick={() => setActiveTab('email')}>
+                    <Mail size={16} style={{ marginRight: 6 }} />
+                    Email Config
+                </button>
+                <button className={`tab ${activeTab === 'attachments' ? 'active' : ''}`} onClick={() => setActiveTab('attachments')}>
+                    <FileText size={16} style={{ marginRight: 6 }} />
+                    Attachments
+                </button>
             </div>
 
-            {/* Email Configuration */}
-            <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <h3 style={{ marginBottom: 'var(--spacing-lg)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-                    <Mail size={20} style={{ color: 'var(--accent-primary)' }} />
-                    Email Configuration
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
-                    <div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '4px' }}>SMTP Server</div>
-                        <div style={{ fontWeight: 500 }}>{settings?.email?.smtpHost || 'Not configured'}</div>
-                    </div>
-                    <div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '4px' }}>From Email</div>
-                        <div style={{ fontWeight: 500 }}>{settings?.email?.fromEmail || 'Not configured'}</div>
-                    </div>
-                </div>
-                <p style={{ marginTop: 'var(--spacing-lg)', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                    Email settings are configured via environment variables. See <code>backend/.env</code>
-                </p>
-            </div>
+            {/* Profile Tab */}
+            {activeTab === 'profile' && (
+                <div className="card">
+                    <h3 style={{ marginBottom: 'var(--spacing-lg)' }}>Your Information</h3>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-lg)' }}>
+                        This information is used to personalize your outreach emails.
+                    </p>
 
-            {/* Rate Limiting */}
-            <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <h3 style={{ marginBottom: 'var(--spacing-lg)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-                    <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
-                    Rate Limiting
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-md)' }}>
-                    <div style={{ padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Hourly Limit</div>
-                        <div style={{ fontWeight: 600, fontSize: '1.25rem', marginTop: '4px' }}>
-                            {settings?.rateLimit?.hourlyLimit || 15} emails/hour
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
+                        <div className="form-group">
+                            <label className="form-label required">Full Name</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={profile.fullName}
+                                onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                                placeholder="John Smith"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label required">Role/Title</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={profile.role}
+                                onChange={(e) => setProfile({ ...profile, role: e.target.value })}
+                                placeholder="Software Engineer"
+                            />
                         </div>
                     </div>
-                    <div style={{ padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Daily Limit</div>
-                        <div style={{ fontWeight: 600, fontSize: '1.25rem', marginTop: '4px' }}>
-                            {settings?.rateLimit?.dailyLimit || 100} emails/day
-                        </div>
-                    </div>
-                    <div style={{ padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Min Delay</div>
-                        <div style={{ fontWeight: 600, fontSize: '1.25rem', marginTop: '4px' }}>
-                            {(settings?.rateLimit?.minDelay || 180000) / 1000}s between emails
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            {/* Privacy & Compliance */}
-            <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <h3 style={{ marginBottom: 'var(--spacing-lg)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-                    <Shield size={20} style={{ color: 'var(--accent-primary)' }} />
-                    Privacy & Compliance
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-md)' }}>
-                    {[
-                        { label: 'GDPR Compliant', status: true, desc: 'Data can be deleted on request' },
-                        { label: 'CAN-SPAM Compliant', status: true, desc: 'Opt-out in every email' },
-                        { label: 'AES-256 Encryption', status: true, desc: 'Emails encrypted at rest' },
-                        { label: 'ToS Compliant', status: true, desc: 'No LinkedIn automation' },
-                    ].map((item) => (
-                        <div
-                            key={item.label}
-                            style={{
-                                padding: 'var(--spacing-md)',
-                                background: 'var(--bg-tertiary)',
-                                borderRadius: 'var(--radius-md)',
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: 'var(--spacing-md)',
-                            }}
-                        >
-                            <CheckCircle size={20} style={{ color: 'var(--accent-success)', flexShrink: 0 }} />
-                            <div>
-                                <div style={{ fontWeight: 500 }}>{item.label}</div>
-                                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{item.desc}</div>
+                    <div className="form-group">
+                        <label className="form-label">Short Bio</label>
+                        <textarea
+                            className="form-textarea"
+                            value={profile.bio}
+                            onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                            placeholder="1-2 lines about yourself and what you do"
+                            rows={2}
+                        />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
+                        <div className="form-group">
+                            <label className="form-label">LinkedIn URL</label>
+                            <div style={{ position: 'relative' }}>
+                                <Linkedin size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <input
+                                    type="url"
+                                    className="form-input"
+                                    value={profile.linkedinUrl}
+                                    onChange={(e) => setProfile({ ...profile, linkedinUrl: e.target.value })}
+                                    placeholder="linkedin.com/in/you"
+                                    style={{ paddingLeft: 44 }}
+                                />
                             </div>
                         </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Data Management */}
-            <div className="card" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-                <h3 style={{ marginBottom: 'var(--spacing-lg)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', color: 'var(--accent-danger)' }}>
-                    <Trash2 size={20} />
-                    Data Management
-                </h3>
-
-                <div style={{ marginBottom: 'var(--spacing-xl)' }}>
-                    <h4 style={{ marginBottom: 'var(--spacing-sm)' }}>Cleanup Old Data</h4>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)' }}>
-                        Delete outreach messages and audit logs older than a specified number of days.
-                    </p>
-                    <div style={{ display: 'flex', gap: 'var(--spacing-md)', alignItems: 'center' }}>
-                        <input
-                            type="number"
-                            className="form-input"
-                            value={cleanupDays}
-                            onChange={(e) => setCleanupDays(parseInt(e.target.value) || 30)}
-                            min={7}
-                            max={365}
-                            style={{ width: '100px' }}
-                        />
-                        <span style={{ color: 'var(--text-muted)' }}>days old</span>
-                        <button className="btn btn-secondary" onClick={handleCleanup}>
-                            <RefreshCw size={16} />
-                            Run Cleanup
-                        </button>
+                        <div className="form-group">
+                            <label className="form-label">Portfolio URL</label>
+                            <div style={{ position: 'relative' }}>
+                                <Globe size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <input
+                                    type="url"
+                                    className="form-input"
+                                    value={profile.portfolioUrl}
+                                    onChange={(e) => setProfile({ ...profile, portfolioUrl: e.target.value })}
+                                    placeholder="yourportfolio.com"
+                                    style={{ paddingLeft: 44 }}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
+            )}
 
-                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 'var(--spacing-lg)' }}>
-                    <h4 style={{ marginBottom: 'var(--spacing-sm)', color: 'var(--accent-danger)' }}>Delete All Data</h4>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)' }}>
-                        Permanently delete ALL data including companies, contacts, emails, and outreach history.
-                        This action cannot be undone.
+            {/* Email Config Tab */}
+            {activeTab === 'email' && (
+                <div className="card">
+                    <h3 style={{ marginBottom: 'var(--spacing-lg)' }}>Email Sending Configuration</h3>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-lg)' }}>
+                        Configure SMTP settings to send emails through your own account.
                     </p>
-                    <button className="btn btn-danger" onClick={handleDeleteAll}>
-                        <Trash2 size={16} />
-                        Delete All Data
-                    </button>
+
+                    <div className="form-group">
+                        <label className="form-label required">Your Email Address</label>
+                        <div style={{ position: 'relative' }}>
+                            <Mail size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input
+                                type="email"
+                                className="form-input"
+                                value={profile.email}
+                                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                                placeholder="you@gmail.com"
+                                style={{ paddingLeft: 44 }}
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--spacing-md)' }}>
+                        <div className="form-group">
+                            <label className="form-label">SMTP Host</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={smtp.host}
+                                onChange={(e) => setSmtp({ ...smtp, host: e.target.value })}
+                                placeholder="smtp.gmail.com"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Port</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={smtp.port}
+                                onChange={(e) => setSmtp({ ...smtp, port: e.target.value })}
+                                placeholder="587"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">SMTP Password / App Password</label>
+                        <input
+                            type="password"
+                            className="form-input"
+                            value={smtp.password}
+                            onChange={(e) => setSmtp({ ...smtp, password: e.target.value })}
+                            placeholder="••••••••••••••••"
+                        />
+                        <p className="form-help">
+                            For Gmail, use an App Password. Go to Google Account → Security → 2-Step Verification → App passwords
+                        </p>
+                    </div>
+
+                    {/* Rate Limit Info */}
+                    <div style={{ marginTop: 'var(--spacing-lg)', padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)' }}>
+                            <Clock size={18} style={{ color: 'var(--accent-primary)' }} />
+                            <strong>Rate Limiting (Default)</strong>
+                        </div>
+                        <ul style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0, paddingLeft: 'var(--spacing-lg)' }}>
+                            <li>10-20 emails per hour with random delays</li>
+                            <li>3-5 minute delay between emails</li>
+                            <li>100 emails per day maximum</li>
+                        </ul>
+                    </div>
                 </div>
+            )}
+
+            {/* Attachments Tab */}
+            {activeTab === 'attachments' && (
+                <div className="card">
+                    <h3 style={{ marginBottom: 'var(--spacing-lg)' }}>Attachments</h3>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-lg)' }}>
+                        Upload your resume and portfolio to attach to outreach emails.
+                    </p>
+
+                    {/* Upload Area */}
+                    <div
+                        className="file-upload"
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{ marginBottom: 'var(--spacing-lg)' }}
+                    >
+                        <Upload size={32} style={{ marginBottom: 'var(--spacing-sm)' }} />
+                        <p style={{ margin: 0 }}>
+                            <strong>Click to upload</strong> your resume or portfolio
+                        </p>
+                        <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                            PDF, DOC, DOCX (max 10MB)
+                        </p>
+                    </div>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept=".pdf,.doc,.docx"
+                        multiple
+                        style={{ display: 'none' }}
+                    />
+
+                    {/* Attachment List */}
+                    {attachments.length > 0 && (
+                        <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
+                            {attachments.map((attachment, i) => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: 'var(--spacing-md)',
+                                        background: 'var(--bg-tertiary)',
+                                        borderRadius: 'var(--radius-md)',
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+                                        <FileText size={20} style={{ color: 'var(--accent-primary)' }} />
+                                        <div>
+                                            <div style={{ fontWeight: 500 }}>{attachment.name}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                Type: {attachment.type}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => removeAttachment(i)}
+                                        style={{ color: 'var(--accent-danger)' }}
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Attachment Logic */}
+                    <div style={{ marginTop: 'var(--spacing-xl)', padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+                        <h4 style={{ marginBottom: 'var(--spacing-sm)' }}>Attachment Logic</h4>
+                        <ul style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0, paddingLeft: 'var(--spacing-lg)' }}>
+                            <li><strong>Job Referral:</strong> Attaches your resume</li>
+                            <li><strong>Personal Website:</strong> Attaches your portfolio + includes portfolio link</li>
+                            <li><strong>Automation:</strong> Attaches portfolio or case study</li>
+                        </ul>
+                    </div>
+                </div>
+            )}
+
+            {/* Privacy Note */}
+            <div className="card" style={{ marginTop: 'var(--spacing-lg)', background: 'var(--bg-tertiary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)' }}>
+                    <Shield size={18} style={{ color: 'var(--accent-success)' }} />
+                    <strong>Privacy & Security</strong>
+                </div>
+                <ul style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0, paddingLeft: 'var(--spacing-lg)' }}>
+                    <li>All settings are stored locally in your browser</li>
+                    <li>No data is sent to external servers</li>
+                    <li>Use App Passwords instead of your main password</li>
+                </ul>
             </div>
         </div>
     );

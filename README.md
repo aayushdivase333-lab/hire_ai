@@ -1,45 +1,36 @@
-# LeadGen - Privacy-First Lead Finder & Cold Email System
+# Outreach - Simple Cold Email Tool
 
-A sophisticated, privacy-respecting lead finder and cold email sender built for boutique firms and family offices. Find contacts, generate emails, and send personalized outreach - all while staying 100% legal and ToS-compliant.
-
-![LeadGen Dashboard](./docs/dashboard.png)
+A clean, simple outreach tool that helps you find the right people, generate personalized emails, and send them through your own email account.
 
 ## ✨ Features
 
-### 🎯 One-Click Discovery
-- Enter a company name → System finds 10-15 relevant contacts automatically
-- Select target roles (Partner, C-Level, Director, VP, etc.)
-- Review and approve before adding contacts
+### 🎯 Choose Your Purpose
+Select one of three outreach types:
+- **Job Referral** - Ask for referrals at target companies (attaches resume)
+- **Personal Website** - Offer to build/improve their website (attaches portfolio)
+- **Automation** - Offer to automate their workflows (attaches case study)
 
-### 📧 Smart Email Generation
-- Auto-generate email addresses based on common patterns
-- MX record validation to verify domain exists
-- Multiple candidates ranked by confidence
+### 🔍 Find People
+- Enter company name and optional website
+- Filter by title keywords and seniority
+- Auto-generate email addresses
 
-### 📝 Template System
-- Customizable email templates with variables
-- Variables: `{{first_name}}`, `{{company_name}}`, `{{role}}`, `{{my_service_summary}}`
-- Preview with sample data before sending
+### 📧 Preview & Edit
+- See exactly what each person will receive
+- Edit subject and body inline
+- Review attachments
 
-### 📤 Outreach Management
-- Queue emails with rate limiting (CAN-SPAM compliant)
-- Track status: Draft → Queued → Sent → Replied
-- Mark replies, cancel pending, view history
+### 📤 Send Through Your Account
+- Use your own SMTP (Gmail, etc.)
+- Rate-limited sending (10-20/hour)
+- No external dependencies
 
-### 📎 Document Attachments
-- Upload portfolios, case studies, rate cards
-- Attach to outreach emails automatically
+## 🖥️ Simple 4-Screen Flow
 
-### 👤 Profile Management
-- Store your info for email personalization
-- Configure services you offer
-- Custom email signature
-
-### 🔒 Privacy & Compliance
-- **GDPR Compliant**: Delete data on request
-- **CAN-SPAM Compliant**: Opt-out in every email
-- **AES-256 Encryption**: Emails encrypted at rest
-- **ToS Compliant**: No LinkedIn scraping/automation
+1. **Purpose** → Choose job referral, website, or automation
+2. **Company** → Enter target company and filters
+3. **Review** → Preview emails, edit if needed
+4. **History** → See past campaigns
 
 ## 🏗️ Tech Stack
 
@@ -47,209 +38,116 @@ A sophisticated, privacy-respecting lead finder and cold email sender built for 
 |-------|------------|
 | Frontend | Next.js 14, React, TypeScript |
 | Backend | Node.js, Express, TypeScript |
-| Database | SQLite (better-sqlite3) |
+| Database | SQLite |
 | Email | Nodemailer (SMTP) |
-| Styling | Custom CSS (Dark theme) |
-| Encryption | CryptoJS (AES-256) |
 
 ## 📁 Project Structure
 
 ```
-leadgen/
-├── package.json              # Monorepo root
-├── README.md
-├── .gitignore
-│
+outreach/
 ├── backend/
-│   ├── .env.example          # Environment template
-│   ├── package.json
-│   ├── tsconfig.json
 │   ├── src/
 │   │   ├── index.ts          # Express server
-│   │   ├── config.ts         # Configuration
-│   │   ├── db/
-│   │   │   ├── database.ts   # SQLite schema
-│   │   │   ├── migrate.ts    # Migrations
-│   │   │   └── seed.ts       # Default templates
-│   │   ├── routes/
-│   │   │   ├── companies.ts
-│   │   │   ├── people.ts
-│   │   │   ├── templates.ts
-│   │   │   ├── outreach.ts
-│   │   │   ├── discovery.ts
-│   │   │   └── system.ts
-│   │   ├── services/
-│   │   │   ├── discovery.ts
-│   │   │   ├── emailDiscovery.ts
-│   │   │   ├── emailSender.ts
-│   │   │   └── queue.ts
-│   │   └── utils/
-│   │       └── encryption.ts
-│   └── tests/
+│   │   ├── routes/           # API endpoints
+│   │   └── services/         # Discovery, email
+│   └── package.json
 │
 ├── frontend/
-│   ├── .env.example
-│   ├── package.json
-│   ├── next.config.js
-│   ├── tsconfig.json
 │   └── src/
 │       ├── app/
-│       │   ├── layout.tsx
-│       │   ├── page.tsx          # Dashboard
-│       │   ├── discover/         # Lead discovery
-│       │   ├── companies/        # Company management
-│       │   ├── contacts/         # Contact management
-│       │   ├── templates/        # Email templates
-│       │   ├── outreach/         # Campaign sender
-│       │   ├── documents/        # File attachments
-│       │   ├── profile/          # Your profile
-│       │   └── settings/         # System settings
+│       │   ├── page.tsx      # Main wizard (4 steps)
+│       │   ├── history/      # Past campaigns
+│       │   └── settings/     # Profile & SMTP
 │       ├── components/
-│       ├── lib/
 │       └── styles/
 │
-└── shared/
-    └── types.ts              # Shared TypeScript types
+└── package.json
 ```
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js 18+ with npm
-- SMTP credentials (Gmail, SendGrid, etc.)
-
-### Installation
-
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/leadgen.git
-cd leadgen
+# Clone
+git clone https://github.com/aayushdivase333-lab/hire_ai.git
+cd hire_ai
 
-# Install dependencies
+# Install
 npm install
 
-# Configure environment
+# Configure backend (optional - for actual email sending)
 cp backend/.env.example backend/.env
-# Edit backend/.env with your SMTP credentials
+# Edit .env with SMTP credentials
 
-# Initialize database
-npm run migrate
-
-# Seed default templates
-npm run seed
-
-# Start development servers
+# Run
 npm run dev
 ```
 
-### Access
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
+**Open:** http://localhost:3000
 
-## ⚙️ Configuration
+## ⚙️ Settings
 
-### Backend Environment Variables
+### Profile (Required)
+- Full name
+- Role/title
+- LinkedIn URL
+- Portfolio URL
 
-```env
-# Server
-PORT=3001
-NODE_ENV=development
+### SMTP (For Sending)
+- Gmail: `smtp.gmail.com`, port `587`
+- Use App Password (not your main password)
+- Go to: Google Account → Security → 2-Step Verification → App passwords
 
-# Database
-DATABASE_PATH=./data/leadfinder.db
+### Attachments
+- Upload your resume (PDF)
+- Upload your portfolio (PDF)
+- Auto-attached based on purpose
 
-# Encryption (generate a secure 32+ char key)
-ENCRYPTION_KEY=your-super-secret-key-minimum-32-chars
+## 📋 Email Templates
 
-# SMTP (example: Gmail)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
-FROM_EMAIL=your-email@gmail.com
-FROM_NAME=Your Name
+### Job Referral
+```
+Subject: Quick question about {{company_name}}
 
-# Rate Limiting
-HOURLY_EMAIL_LIMIT=15
-DAILY_EMAIL_LIMIT=100
-MIN_EMAIL_DELAY_MS=180000
+Hi {{first_name}},
 
-# Your Identity (for templates)
-MY_NAME=Your Name
-MY_EMAIL=your-email@gmail.com
-MY_SERVICE_SUMMARY=I help firms modernize their digital presence.
-
-# Data Retention
-DATA_RETENTION_DAYS=90
+I came across your profile and noticed you're a {{role}} at {{company_name}}...
+[asks for referral or short chat]
+[mentions resume attached]
 ```
 
-## 📋 Workflow
+### Personal Website
+```
+Subject: Your online presence, {{first_name}}
 
-1. **Add Company** → Enter name + website
-2. **Discover Contacts** → Select roles, system finds people
-3. **Generate Emails** → Auto-create email addresses
-4. **Choose Template** → Personalized with variables
-5. **Send Outreach** → Rate-limited, compliant
-6. **Track Results** → Monitor replies, follow up
+Hi {{first_name}},
 
-## 🔐 Security Features
-
-| Feature | Implementation |
-|---------|----------------|
-| Email encryption | AES-256 at rest |
-| Unsubscribe tracking | SHA-256 email hash |
-| Rate limiting | Per-hour/day limits |
-| Request throttling | Express rate-limit |
-| CORS protection | Configurable origins |
-| SQL injection | Parameterized queries |
-
-## 📈 API Endpoints
-
-### Companies
-- `GET /api/companies` - List companies
-- `POST /api/companies` - Create company
-- `DELETE /api/companies/:id` - Delete company
-
-### People
-- `GET /api/people` - List contacts
-- `POST /api/people` - Create contact
-- `POST /api/people/:id/generate-emails` - Generate emails
-
-### Discovery
-- `POST /api/discovery/auto` - Auto-discover contacts
-- `GET /api/discovery/suggestions` - Get search queries
-
-### Outreach
-- `GET /api/outreach` - List messages
-- `POST /api/outreach` - Create message
-- `POST /api/outreach/bulk` - Bulk send
-- `POST /api/outreach/:id/send` - Send now
-
-### Templates
-- `GET /api/templates` - List templates
-- `POST /api/templates` - Create template
-- `POST /api/templates/:id/preview` - Preview with variables
-
-## 🧪 Testing
-
-```bash
-# Run backend tests
-cd backend
-npm test
-
-# Run with coverage
-npm run test:coverage
+I help professionals create strong personal websites...
+[emphasizes online credibility]
+[links portfolio]
 ```
 
-## 📄 License
+### Automation
+```
+Subject: Automating the boring stuff at {{company_name}}
 
-MIT License - feel free to use for your own lead generation needs.
+Hi {{first_name}},
 
-## 🤝 Contributing
+As a {{role}}, you probably deal with repetitive work...
+[offers to automate workflows]
+[links portfolio]
+```
 
-Contributions welcome! Please read our contributing guidelines.
+## 🔒 Privacy
+
+- All data stored locally in browser (localStorage)
+- No external servers
+- Emails sent directly through your SMTP
+- CAN-SPAM compliant opt-out in every email
+
+## 📝 License
+
+MIT - Use freely
 
 ---
 
-**Built with ❤️ for boutique firms and solo entrepreneurs**
+**Simple workflow. Right people. Personalized emails.**

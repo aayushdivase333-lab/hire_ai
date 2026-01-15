@@ -3,30 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    LayoutDashboard,
-    Building2,
-    Users,
-    Search,
-    Mail,
-    Send,
-    FileText,
-    User,
-    Settings,
-    LogOut,
-    Sun,
     Zap,
+    Send,
+    History,
+    Settings,
+    HelpCircle,
+    Sun,
 } from 'lucide-react';
-
-const navItems = [
-    { href: '/', label: 'Overview', icon: LayoutDashboard },
-    { href: '/discover', label: 'Discover', icon: Search },
-    { href: '/companies', label: 'Companies', icon: Building2 },
-    { href: '/contacts', label: 'Contacts', icon: Users },
-    { href: '/templates', label: 'Templates', icon: FileText },
-    { href: '/outreach', label: 'Outreach', icon: Send },
-    { href: '/documents', label: 'Documents', icon: Mail },
-    { href: '/profile', label: 'Profile', icon: User },
-];
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -39,42 +22,43 @@ export default function Sidebar() {
                         <Zap size={20} />
                     </div>
                     <div className="sidebar-logo-text">
-                        Lead<span>Gen</span>
+                        Out<span>reach</span>
                     </div>
                 </Link>
             </div>
 
             <nav className="sidebar-nav">
-                {navItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = pathname === item.href ||
-                        (item.href !== '/' && pathname.startsWith(item.href));
-
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`nav-item ${isActive ? 'active' : ''}`}
-                        >
-                            <Icon size={20} />
-                            <span>{item.label}</span>
-                        </Link>
-                    );
-                })}
+                <Link
+                    href="/"
+                    className={`nav-item ${pathname === '/' ? 'active' : ''}`}
+                >
+                    <Send size={20} />
+                    <span>New Outreach</span>
+                </Link>
+                <Link
+                    href="/history"
+                    className={`nav-item ${pathname === '/history' ? 'active' : ''}`}
+                >
+                    <History size={20} />
+                    <span>History</span>
+                </Link>
+                <Link
+                    href="/settings"
+                    className={`nav-item ${pathname === '/settings' ? 'active' : ''}`}
+                >
+                    <Settings size={20} />
+                    <span>Settings</span>
+                </Link>
             </nav>
 
             <div className="sidebar-footer">
-                <Link href="/settings" className="sidebar-footer-item">
-                    <Settings size={18} />
-                    <span>Settings</span>
-                </Link>
+                <div className="sidebar-footer-item">
+                    <HelpCircle size={18} />
+                    <span>Help</span>
+                </div>
                 <div className="sidebar-footer-item">
                     <Sun size={18} />
                     <span>Light Mode</span>
-                </div>
-                <div className="sidebar-footer-item">
-                    <LogOut size={18} />
-                    <span>Sign Out</span>
                 </div>
             </div>
         </aside>
